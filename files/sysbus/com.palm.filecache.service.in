@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=com.palm.filecache
+Exec=@WEBOS_INSTALL_SBINDIR@/filecache
+Type=dynamic

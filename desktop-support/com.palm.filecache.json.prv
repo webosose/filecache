@@ -1,0 +1,14 @@
+{
+    "role": {
+        "exeName":"/usr/lib/luna/filecache",
+        "type": "regular",
+        "allowedNames": ["com.palm.filecache"]
+    },
+    "permissions": [
+        {
+            "service":"com.palm.filecache",
+            "inbound":["*"],
+            "outbound":["*"]
+        }
+    ]
+}

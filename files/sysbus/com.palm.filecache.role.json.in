@@ -1,0 +1,11 @@
+{
+    "exeName":"@WEBOS_INSTALL_SBINDIR@/filecache",
+    "type": "regular",
+    "allowedNames": ["com.palm.filecache"],
+    "permissions": [
+        {
+            "service":"com.palm.filecache",
+            "outbound":[]
+        }
+    ]
+}

@@ -1,0 +1,23 @@
+{
+    "system": [
+        "com.palm.filecache/ChangeType",
+        "com.palm.filecache/CopyCacheObject",
+        "com.palm.filecache/DefineType",
+        "com.palm.filecache/DeleteType"
+    ],
+    "filecache": [
+        "com.palm.filecache/DescribeType",
+        "com.palm.filecache/ExpireCacheObject",
+        "com.palm.filecache/GetCacheObjectFilename",
+        "com.palm.filecache/GetCacheObjectSize",
+        "com.palm.filecache/GetCacheStatus",
+        "com.palm.filecache/GetCacheTypeStatus",
+        "com.palm.filecache/GetCacheTypes",
+        "com.palm.filecache/GetVersion",
+        "com.palm.filecache/InsertCacheObject",
+        "com.palm.filecache/ResizeCacheObject",
+        "com.palm.filecache/SubscribeCacheObject",
+        "com.palm.filecache/TouchCacheObject"
+    ]
+}
+

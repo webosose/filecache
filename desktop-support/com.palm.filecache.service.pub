@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=com.palm.filecache
+Exec=/usr/lib/luna/filecache
+Type=static

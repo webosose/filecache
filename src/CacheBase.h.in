@@ -1,0 +1,299 @@
+// Copyright (c) 2007-2018 LG Electronics, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// SPDX-License-Identifier: Apache-2.0
+
+#ifndef __CACHE_BASE_H__
+#define __CACHE_BASE_H__
+
+#include <errno.h>
+#include <ftw.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <strings.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/xattr.h>
+#include <unistd.h>
+#include <fstream>
+#include <iostream>
+#include <list>
+#include <map>
+#include <set>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "core/MojCoreDefs.h"
+
+static MojLogger s_globalLogger(_T("filecache"));
+
+// These are the basic types used throughout the file cache service
+typedef int32_t cacheSize_t;
+typedef int32_t paramValue_t;
+// Changed the following from uint64_t to unsigned long long to deal
+// with the printf formatting problem where uint64_t is unsigned long
+// long on 32 bit machines but unsigned long on 64 bit machines.
+typedef unsigned long long cachedObjectId_t;
+typedef uint32_t sequenceNumber_t;
+
+// The maximum length of a filename (not pathname)
+static const int s_maxFilenameLength = 256;
+
+// This is used for encoding the object ids in the pathname.
+static const char s_charMapping[65] =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+_";
+
+// The number of random bits
+static const int s_maxRandBits = 32;
+
+// The number of sequence bits
+static const int s_maxSeqBits = 22;
+
+// The number of bits in the object id
+static const int s_objIdBits = s_maxRandBits + s_maxSeqBits;
+
+// Each 6 bits are masked to create one character in the encoding
+// which means there are 9 characters for the 54 bit number.
+static const int s_maskSize = 6;
+static const int s_numChars = s_objIdBits / s_maskSize;
+
+// The directory name will consist of 1 of the encoded characters
+static const int s_dirChars = 1;
+
+// Compute the largest object id permissible for 54 bits to scale
+// the random number generator return value
+static const cachedObjectId_t s_maxId = (((cachedObjectId_t) 1 <<
+                                        s_objIdBits) - 1);
+
+// How many sequence numbers can we use before we write out the
+// value.  When we read the value we always add this to the
+// written count in case we died without updating the count.
+static const sequenceNumber_t s_sequenceBumpCnt = 100;
+
+// The value at which we should wrap the sequence numbers
+static const sequenceNumber_t s_maxPossibleSeqNum = (((sequenceNumber_t) 1 <<
+        s_maxSeqBits) - 1);
+static const sequenceNumber_t s_maxAllowSeqNum = (s_maxPossibleSeqNum -
+        (s_maxPossibleSeqNum % s_sequenceBumpCnt));
+
+// A 6 bit mask that will be shifted along the object id
+static const int s_mask = ((1 << s_maskSize) - 1);
+
+// The default location for the config file
+static const std::string
+s_configFile("@WEBOS_INSTALL_WEBOS_SYSCONFDIR@/FileCache.conf");
+
+// The default value for the total cache space (100MiB, or 0.1 kMiB)
+static const cacheSize_t s_defaultCacheSpace = 100 * 1024 * 1024;
+
+// The default root of the file cache directory tree
+static const std::string
+s_defaultBaseDirName("@WEBOS_INSTALL_LOCALSTATEDIR@/file-cache");
+
+// The default location for downloaded files
+static const std::string
+s_defaultDownloadDir("@WEBOS_INSTALL_LOCALSTORAGEDIR@/downloads");
+
+// The location and name of the initctl command
+static const std::string s_InitctlCommand("/sbin/initctl");
+
+static const std::string s_typeConfigFilename("Type.defaults");
+
+static const paramValue_t s_maxCost = 255;
+
+static const cacheSize_t s_blockSize = 4096;
+
+static const paramValue_t s_maxUniqueFileIndex = 100;
+
+static const mode_t s_fileROPerms = S_IRUSR | S_IRGRP | S_IROTH;
+static const mode_t s_fileRWPerms = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP
+                                    | S_IROTH | S_IWOTH;
+static const mode_t s_dirPerms = S_IRUSR | S_IWUSR | S_IXUSR | S_IWGRP | S_IXGRP
+                                 | S_IWOTH | S_IXOTH;
+static const mode_t s_dirObjPerms = S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP |
+                                    S_IWGRP
+                                    | S_IXGRP | S_IROTH | S_IWOTH | S_IXOTH;
+
+class CCacheParamValues
+{
+public:
+
+	CCacheParamValues(cacheSize_t loWatermark = 0, cacheSize_t hiWatermark = 0,
+	                  cacheSize_t size = 0, paramValue_t cost = 0,
+	                  paramValue_t lifetime = 1)
+		: m_loWatermark(loWatermark)
+		, m_hiWatermark(hiWatermark)
+		, m_size(size)
+		, m_cost(cost)
+		, m_lifetime(lifetime)
+	{
+		if (m_cost > s_maxCost)
+		{
+			m_cost = s_maxCost;
+		}
+		if (m_lifetime < 1)
+		{
+			m_lifetime = 1;
+		}
+	}
+
+	cacheSize_t GetLoWatermark() const
+	{
+		return m_loWatermark;
+	}
+	cacheSize_t GetHiWatermark() const
+	{
+		return m_hiWatermark;
+	}
+	cacheSize_t GetSize() const
+	{
+		return m_size;
+	}
+	paramValue_t GetCost() const
+	{
+		return m_cost;
+	}
+	paramValue_t GetLifetime() const
+	{
+		return m_lifetime;
+	}
+
+	bool operator==(const CCacheParamValues &otherParams) const
+	{
+		if ((m_loWatermark != otherParams.GetLoWatermark()) ||
+		        (m_hiWatermark != otherParams.GetHiWatermark()) ||
+		        (m_size != otherParams.GetSize()) ||
+		        (m_cost != otherParams.GetCost()) ||
+		        (m_lifetime != otherParams.GetLifetime()))
+		{
+			return false;
+		}
+		return true;
+	}
+
+	bool operator!=(const CCacheParamValues &otherParams) const
+	{
+		return !(*this == otherParams);
+	}
+
+	cacheSize_t SetLoWatermark(cacheSize_t loWatermark)
+	{
+		m_loWatermark = loWatermark;
+		return m_loWatermark;
+	}
+	cacheSize_t SetHiWatermark(cacheSize_t hiWatermark)
+	{
+		m_hiWatermark = hiWatermark;
+		return m_hiWatermark;
+	}
+	cacheSize_t SetSize(cacheSize_t size)
+	{
+		m_size = size;
+		return m_size;
+	}
+	paramValue_t SetCost(paramValue_t cost)
+	{
+		if (cost > s_maxCost)
+		{
+			cost = s_maxCost;
+		}
+		m_cost = cost;
+		return m_cost;
+	}
+	paramValue_t SetLifetime(paramValue_t lifetime)
+	{
+		if (lifetime < 1)
+		{
+			lifetime = 1;
+		}
+		m_lifetime = lifetime;
+		return m_lifetime;
+	}
+
+private:
+
+	cacheSize_t m_loWatermark;
+	cacheSize_t m_hiWatermark;
+	cacheSize_t m_size;
+	paramValue_t m_cost;
+	paramValue_t m_lifetime;
+};
+
+// Returns one character at a time from the object id.  This allows
+// the caller to build the path with some chars in different path
+// components.
+char GetCharNFromObjectId(const cachedObjectId_t objectId, const int n);
+
+// Returns the index of the character in the encoding array.  This
+// index is the value of the 6 bits of the object id represented by
+// this character.
+paramValue_t GetValueForChar(const int c);
+
+// Returns the object id from the path.  This assumes the path is of
+// the form
+// /dir/subdir-1/.../typeName/objectid[0:m]/objectid[m+1:n].extension
+// where extension does not include a '/' or a '.'.
+cachedObjectId_t GetObjectIdFromPath(const char *filePath);
+
+// Returns the typeName from the path.  This assumes the path is of
+// the form
+// /dir/subdir-1/.../typeName/objectid[0:m]/objectid[m+1:n].extension
+// where extension does not include a '/' or a '.'.
+const std::string GetTypeNameFromPath(const std::string &baseDirName,
+                                      const std::string &filePath);
+
+// returns the directory path for the cached object from the complete
+// pathname.  This assumes the path is of the form
+// /dir/subdir-1/.../typeName/objectid[0:m]/objectid[m+1:n].extension
+// where extension does not include a '/' or a '.'.
+const std::string GetDirectoryFromPath(const std::string &pathname);
+
+// Returns the extension from a filename where the extension does not
+// include a '/' or a '.'
+const std::string GetFileExtension(const char *filePath);
+
+// Returns the basename from a filename where the extension matches
+// that returned by GetFileExtension.  The basename wil not include a
+// trailing period
+const std::string GetFileBasename(const char *filePath);
+
+// Return the path to an cached object identified by the objectId, the
+// typeName, and the file name
+std::string
+BuildPathname(const cachedObjectId_t objectId, const std::string &dirBase,
+              const std::string &typeName, const std::string &fileName,
+              bool createDir = false);
+
+// Return the filesize as it resides on disk after accounting for the
+// filesystem blocksize
+cacheSize_t GetFilesystemFileSize(const cacheSize_t size);
+
+// call fsync on the provided file
+bool SyncFile(const std::string &pathname, std::string &msgText);
+
+// This is the equivalent of rm -rf of the directory in a directory
+// type cached object
+bool CleanupDir(const std::string &pathname, std::string &msgText);
+
+// This is the equivalent of du -s of the directory in a directory
+// type cached object
+cacheSize_t SumDir(const std::string &pathname);
+
+class CFileCacheSet;
+
+#endif

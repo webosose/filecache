@@ -1,0 +1,7 @@
+[
+	{
+	    "title": "Copy Object Tests",
+	    "source": "test/copy_object_test.js",
+	    "testFunction": "CopyObjectTests"
+	}
+]
