@@ -1530,13 +1530,24 @@ CFileCacheSet::ProcessFiles(const std::string &filepath)
 	bool dirType = false;
 
 	struct stat buf;
-	if (::stat(filepath.c_str(), &buf) == -1)
+
+	int fd;
+	if((fd = open(filepath.c_str(), O_RDONLY)) == -1)
+	{
+		int savedErrno = errno;
+		MojLogError(s_log, _T("ProcessFiles: Failed to open file '%s' (%s)."),
+		            filepath.c_str(), ::strerror(savedErrno));
+		flowStat = ERROR;
+	}
+	else if (::fstat(fd, &buf) == -1)
 	{
 		int savedErrno = errno;
 		MojLogError(s_log, _T("ProcessFiles: Failed to stat file '%s' (%s)."),
 		            filepath.c_str(), ::strerror(savedErrno));
 		flowStat = ERROR;
 	}
+
+	close(fd);
 
 	if ((flowStat == CONTINUE) && S_ISDIR(buf.st_mode) &&
 	        isTopLevelDirectory(filepath))
