@@ -1,0 +1,5 @@
+{
+"allowedNames": ["com.palm.filecache"],
+"filecache.management": ["oem"],
+"filecache.operation": ["dev"]
+}
