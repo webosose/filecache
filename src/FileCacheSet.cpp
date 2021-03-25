@@ -1546,7 +1546,7 @@ CFileCacheSet::ProcessFiles(const std::string &filepath)
 		            filepath.c_str(), ::strerror(savedErrno));
 		flowStat = ERROR;
 	}
-        if(fd > 0)
+        if(fd >= 0)
 	  close(fd);
 
 	if ((flowStat == CONTINUE) && S_ISDIR(buf.st_mode) &&
