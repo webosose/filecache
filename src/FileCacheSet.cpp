@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 LG Electronics, Inc.
+// Copyright (c) 2007-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -1531,7 +1531,7 @@ CFileCacheSet::ProcessFiles(const std::string &filepath)
 
 	struct stat buf;
 
-	int fd;
+	int fd = 0;
 	if((fd = open(filepath.c_str(), O_RDONLY)) == -1)
 	{
 		int savedErrno = errno;
@@ -1546,8 +1546,8 @@ CFileCacheSet::ProcessFiles(const std::string &filepath)
 		            filepath.c_str(), ::strerror(savedErrno));
 		flowStat = ERROR;
 	}
-
-	close(fd);
+        if(fd > 0)
+	  close(fd);
 
 	if ((flowStat == CONTINUE) && S_ISDIR(buf.st_mode) &&
 	        isTopLevelDirectory(filepath))
