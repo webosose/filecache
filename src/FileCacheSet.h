@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 LG Electronics, Inc.
+// Copyright (c) 2007-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -68,9 +68,6 @@ public:
 
 	// Get the configuration values for a cache type.
 	CCacheParamValues DescribeType(const std::string &typeName);
-
-	// Cleanup the cache type
-	cacheSize_t CleanupType(const std::string &typeName);
 
 	// Select the object from the best choice from each cache to remove
 	CFileCache *SelectCandidateToExpire(std::map < CFileCache *,
@@ -173,12 +170,10 @@ public:
 		return m_totalCacheSpace;
 	}
 
-	// Compute the sum of the loWatermarks for each of the configured
-	// caches
+	// Compute the sum of the loWatermarks for each of the configured caches
 	virtual cacheSize_t SumOfLoWatermarks();
 
-	// Compute the sum of current sizes for each of the configured
-	// caches
+	// Compute the sum of current sizes for each of the configured caches
 	virtual cacheSize_t SumOfCacheSizes();
 
 	// Get the type that cooresponds to an objectId
@@ -221,8 +216,6 @@ protected:
 	virtual cachedObjectId_t GetNextCachedObjectId();
 
 private:
-
-	CFileCacheSet &operator=(const CFileCacheSet &);
 
 	CFileCache *GetFileCacheForType(const std::string &typeName);
 

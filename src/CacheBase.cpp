@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 LG Electronics, Inc.
+// Copyright (c) 2007-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -80,7 +80,7 @@ GetObjectIdFromPath(const char *filePath)
 
 	// find the position of the last period that indicates the end of
 	// the object id and the start of the extension
-	const char *endChar = rindex(filePath, '.');
+	const char *endChar = rindex(filePath, (int)'.');
 	if (endChar == NULL)
 	{
 		endPos = (int) strlen(filePath);
@@ -107,7 +107,7 @@ GetObjectIdFromPath(const char *filePath)
 
 			// Get the value for the current character and make sure it's
 			// not -1
-			paramValue_t tmp =  GetValueForChar(filePath[curPos]);
+			paramValue_t tmp =  GetValueForChar((int)filePath[curPos]);
 			if (tmp < 0)
 			{
 				return 0;
