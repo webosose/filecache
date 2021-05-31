@@ -55,6 +55,23 @@ CFileCacheSet::CFileCacheSet(bool init) : m_totalCacheSpace(0)
 	ReadSequenceNumber();
 }
 
+uint32_t CFileCacheSet::GetRandomInteger(void) {
+	MojLogTrace(s_log);
+
+	uint32_t random = 0;
+
+	FILE *fp = fopen("/dev/urandom", "r");
+	if (fp) {
+		if (fread(&random, sizeof(random), 1, fp) != sizeof(random)) {
+			MojLogError(s_log, _T("urandom file read error"));
+		}
+		(void)fclose(fp);
+	} else {
+		MojLogError(s_log, _T("urandom file open error"));
+	}
+	return random;
+}
+
 // This defines a new cache type and will cause a new CFileCache
 // object to be instantiated.  The typeName must be unique.  The sum
 // of the cache loWatermarks must be less than the total cache space
@@ -1113,7 +1130,7 @@ CFileCacheSet::GetNextCachedObjectId()
 		// sequenceNumber when it reaches s_maxAllowSeqNum (the highest
 		// s_maxSeqBits bit number that will trigger a WriteSequenceNumber
 		// operation).
-		uint32_t randVal = (uint32_t) lrand48();
+		uint32_t randVal = GetRandomInteger();
 		objId = ((cachedObjectId_t) randVal << s_maxSeqBits) + m_sequenceNumber;
 		MojLogDebug(s_log,
 		            _T("GetNextCachedObjectId: Random value = %ud, seq num = %ud."),

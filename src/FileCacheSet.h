@@ -245,6 +245,7 @@ private:
 	ProcessStatus GetLifetime(const std::string &pathname, paramValue_t *lifetime);
 	int ProcessFiles(const std::string &filepath);
 	bool FileTreeWalk(const std::string &dirName);
+	uint32_t GetRandomInteger(void);
 
 	std::map<const std::string, CFileCache *> m_cacheSet;
 	std::map<const cachedObjectId_t, const std::string> m_idMap;
