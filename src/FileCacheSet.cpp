@@ -62,7 +62,7 @@ uint32_t CFileCacheSet::GetRandomInteger(void) {
 
 	FILE *fp = fopen("/dev/urandom", "r");
 	if (fp) {
-		if (fread(&random, sizeof(random), 1, fp) != sizeof(random)) {
+		if (fread(&random, 1, sizeof(random), fp) != sizeof(random)) {
 			MojLogError(s_log, _T("urandom file read error"));
 		}
 		(void)fclose(fp);
