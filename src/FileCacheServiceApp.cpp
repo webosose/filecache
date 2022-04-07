@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 LG Electronics, Inc.
+// Copyright (c) 2007-2022 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@
 #include "CacheBase.h"
 #include <luna-service2/lunaservice-meta.h>
 #include <luna-service2/lunaservice.h>
+#include "boost/filesystem.hpp"
 
 const char *const ServiceApp::ServiceName = "com.palm.filecache";
 
@@ -44,6 +45,16 @@ void handle_idle_timeout_cb(void *userData)
 	}
 }
 
+void create_default_cachedir()
+{
+	//Creating default directory if not exists
+	std::string defaultDestinationPath("/media/internal/downloads");
+	if (!boost::filesystem::exists(defaultDestinationPath))
+	{
+		boost::filesystem::create_directories(defaultDestinationPath);
+	}
+}
+
 int main(int argc, char **argv)
 {
 
@@ -51,7 +62,7 @@ int main(int argc, char **argv)
 	// cachedObjectId_t will yield 64 bits.  Using uint64_t caused
 	// issues with printf formats between 32 and 64 bit machines
 	assert(sizeof(cachedObjectId_t) == 8);
-
+	create_default_cachedir();
 	ServiceApp app;
 	LSIdleTimeout(LUNA_IDLE_TIMEOUT_MSEC, handle_idle_timeout_cb, &app,NULL);
 	int mainResult = app.main(argc, argv);
