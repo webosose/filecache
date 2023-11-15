@@ -1453,7 +1453,6 @@ CFileCacheSet::GetSize(const std::string &pathname, const struct stat *sb,
 				            _T("ProcessFiles: Failed to rmdir directory '%s' (%s)."),
 				            dirpath.c_str(), ::strerror(savedErrno));
 			}
-			stat = ERROR;
 		}
 		stat = COMPLETE;
 	}
