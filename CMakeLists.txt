@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2018 LG Electronics, Inc.
+# Copyright (c) 2009-2024 LG Electronics, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,11 +27,9 @@ cmake_minimum_required (VERSION 2.8.3)
 project (filecache CXX)
 
 include(webOS/webOS)
-include(webOS/LegacyDefines)
 
 webos_modules_init(1 0 0 QUALIFIER RC2)
 webos_component(2 0 1)
-webos_machine_impl_dep()
 webos_add_compiler_flags(ALL -std=c++11 -Wall -Wconversion -DMOJ_LINUX)
 
 include(FindPkgConfig)
